@@ -1,11 +1,18 @@
+
 #include <iostream>
 #include <fstream>
 #include <string>
 #include <vector>
+#include <filesystem>
 
 using namespace std;
 
+const string EEXTENSION = ".encrypt";
+string filePath;
 
+bool isEncryptedFile(const string& filename) {
+    return filesystem::path(filename).extension() == EEXTENSION;
+}
 
 void encrypt(int key, char* currentChar) {
     while (*currentChar) {
@@ -33,14 +40,19 @@ void decrypt(int key, char* currentChar) {
     }
 }
 
-int main()
-{
+int main() {
     fstream file;
-
-    string filePath;
 
     cout << "Enter the path of the file to encrypt or decrypt: ";
     getline(cin, filePath);
+
+
+    filesystem::path encryptedFilePath;
+    if (isEncryptedFile(filePath)) {
+        encryptedFilePath = filePath;
+    } else {
+        encryptedFilePath = filePath.append(EEXTENSION);
+    }
 
     file.open(filePath, ios::in | ios::out | ios::binary);
     if (!file.is_open()) {
@@ -48,16 +60,9 @@ int main()
         return 0;
     }
 
-    int choice, key;
-
-    cout << "Enter 0 to encrypt, 1 to decrypt: ";
-    cin >> choice;
-
-    if (choice != 0 && choice != 1) {
-        cout << "Invalid choice.";
-        file.close();
-        return 0;
-    }
+    int key;
+    cout << "Enter the numeric key: ";
+    cin >> key;
 
     vector<char> data;
     char c;
@@ -65,14 +70,13 @@ int main()
         data.push_back(c);
     }
 
-    if (choice == 0) {
-        for (char& currentChar : data) {
-            encrypt(key, &currentChar);
-        }
-    } else {
+    if (isEncryptedFile(filePath)) {
         for (char& currentChar : data) {
             decrypt(key, &currentChar);
         }
+    } else {
+        for (char& currentChar : data) {
+            encrypt(key, &currentChar);
     }
 
     file.seekp(0);
@@ -81,6 +85,10 @@ int main()
     }
 
     file.close();
+
+
+        filesystem::rename(filePath, encryptedFilePath);
+    }
 
     return 0;
 }
